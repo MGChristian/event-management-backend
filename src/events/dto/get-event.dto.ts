@@ -53,6 +53,12 @@ export class GetEventDto {
   createdAt: Date;
 
   @ApiProperty({
+    example: 150,
+    description: 'Number of tickets sold for the event',
+  })
+  ticketsSold?: number;
+
+  @ApiProperty({
     description: 'Organizer of the event',
     type: GetUserDto,
   })

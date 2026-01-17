@@ -50,7 +50,6 @@ export class TicketsController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @Get('mine')
   findMyTickets(@Req() request: Request) {
-    console.log(request['user']);
     const userId: number = request['user'].id;
     return this.ticketsService.findMyTickets(userId);
   }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,40 +18,33 @@ export class EventsService {
     return this.eventRepository.save(newEvent);
   }
 
-  findAll() {
-    return this.eventRepository.find();
+  async findAll() {
+    return this.eventRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.organizer', 'organizer') // Fetch organizer details
+      .loadRelationCountAndMap('event.ticketsSold', 'event.tickets') // Count tickets and map to 'ticketsSold'
+      .orderBy('event.dateStart', 'ASC')
+      .getMany();
   }
 
-  findAllByOrganizer(organizerId: number) {
-    return this.eventRepository.find({
-      where: {
-        organizer: { id: organizerId },
-      },
-      relations: ['organizer'],
-      order: { dateStart: 'ASC' },
-    });
+  async findAllByOrganizer(organizerId: number) {
+    return this.eventRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.organizer', 'organizer')
+      .where('organizer.id = :organizerId', { organizerId })
+      .loadRelationCountAndMap('event.ticketsSold', 'event.tickets') // Count tickets
+      .orderBy('event.dateStart', 'ASC')
+      .getMany();
   }
 
-  findOne(id: number) {
-    return this.eventRepository.findOne({
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        dateStart: true,
-        dateEnd: true,
-        location: true,
-        capacity: true,
-        imageBase64: true,
-        organizer: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      relations: ['organizer'],
-      where: { id },
-    });
+  async findOne(id: number) {
+    return this.eventRepository
+      .createQueryBuilder('event')
+      .leftJoin('event.organizer', 'organizer')
+      .addSelect(['organizer.id', 'organizer.name', 'organizer.email']) // specific selects from your original code
+      .where('event.id = :id', { id })
+      .loadRelationCountAndMap('event.ticketsSold', 'event.tickets') // Count tickets
+      .getOne();
   }
 
   update(id: number, updateEventDto: UpdateEventDto) {
